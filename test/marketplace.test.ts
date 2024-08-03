@@ -2,7 +2,7 @@ const { expect } = require("chai")
 import { ethers } from "hardhat"
 
 const toWei = (value: number) => ethers.parseEther(value.toString())
-const fromWei = (value: any) => ethers.formatEther(value)
+const fromWei = (value: number) => Number(ethers.formatEther(value))
 
 
 describe("NFTMarketplace", async () => {
@@ -127,13 +127,14 @@ describe("NFTMarketplace", async () => {
             // addr1 approves marketplace to spend it
             await nft.connect(addr1).setApprovalForAll(marketplaceAddress, true);
 
-            // addr1 offers their nft at a price of 1 ether
+            // addr1 offers their nft at a price of 2 ether
             await marketplace.connect(addr1).listItem(nftAddress, 1, toWei(price))
         });
 
         it("Should Update items as sold, pay seller, transfer nft to buyer, charge fees and emit Bought event", async () => {
             const sellerInitialEthBalance = await addr1.provider.getBalance(addr1Address);
             const feeAccountInitialEthBalance = await deployer.provider.getBalance(deployerAddress);
+
 
             // fetch the total price of the item
             totalPriceInWei = await marketplace.getTotalPrice(1)
@@ -153,14 +154,15 @@ describe("NFTMarketplace", async () => {
             const sellerFinalEthBalance = await addr1.provider.getBalance(addr1Address);
             const feeAccountFinalEthBalance = await deployer.provider.getBalance(deployerAddress);
 
+
             // Seller should receive the price of the item
-            // expect(fromWei(sellerFinalEthBalance)).to.equal(price + fromWei(sellerInitialEthBalance));
+            expect(fromWei(sellerFinalEthBalance)).to.equal(price + fromWei(sellerInitialEthBalance));
 
             //calculate fee percent
             const fee = (feePercent / 100) * price
 
             // Fee account should receive the fee
-            // expect(fromWei(feeAccountFinalEthBalance)).to.equal(fee + fromWei(feeAccountInitialEthBalance));
+            expect(fromWei(feeAccountFinalEthBalance)).to.equal(fee + fromWei(feeAccountInitialEthBalance));
 
             // Buyer should own the nft
             expect(await nft.ownerOf(1)).to.equal(addr2Address);
