@@ -28,6 +28,14 @@ contract Marketplace is ReentrancyGuard {
         address indexed seller
     );
 
+    event Cancelled(
+        uint itemId,
+        address indexed nft,
+        uint tokenId,
+        uint price,
+        address indexed seller
+    );
+
     event Bought(
         uint itemId,
         address indexed nft,
@@ -43,6 +51,11 @@ contract Marketplace is ReentrancyGuard {
     constructor(uint _feePercent) {
         feePercent = _feePercent;
         feeAccount = payable(msg.sender);
+    }
+
+    // get listing
+    function getItem(uint _itemId) external view returns (Item memory) {
+        return items[_itemId];
     }
 
     // list items
@@ -75,6 +88,33 @@ contract Marketplace is ReentrancyGuard {
 
         // emit event
         emit Listed(itemCount, address(_nft), _tokenId, _price, msg.sender);
+    }
+
+    // cancel listing
+    function cancelListing(uint _itemId) external nonReentrant {
+        Item storage item = items[_itemId];
+
+        require(item.itemId > 0 && _itemId <= itemCount, "Item does not exist");
+        require(
+            msg.sender == item.seller,
+            "You are not the seller of this item"
+        );
+        require(!item.sold, "Item is already sold");
+
+        // transfer nft back to seller
+        item.nft.transferFrom(address(this), msg.sender, item.tokenId);
+
+        // remove item from mapping
+        delete items[_itemId];
+
+        // emit event
+        emit Cancelled(
+            _itemId,
+            address(item.nft),
+            item.tokenId,
+            item.price,
+            msg.sender
+        );
     }
 
     // purchase item
