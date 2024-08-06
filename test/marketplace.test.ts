@@ -116,6 +116,56 @@ describe("NFTMarketplace", async () => {
         })
     });
 
+
+    describe("Cancelling Listed Nft from the marketplace", () => {
+        beforeEach(async () => {
+            // addr1 mints an NFT
+            await nft.connect(addr1).mint(URI);
+
+            // addr1 approves marketplace to spend it
+            await nft.connect(addr1).setApprovalForAll(marketplaceAddress, true);
+
+            // addr1 offers their nft at a price of 1 ether
+            await marketplace.connect(addr1).listItem(nftAddress, 1, toWei(1))
+        })
+
+        it("Should remove the nft from the marketplace and emit a Cancelled event", async () => {
+            await expect(marketplace.connect(addr1).cancelListing(1))
+                .to.emit(marketplace, "Cancelled")
+                .withArgs(
+                    1,
+                    nftAddress,
+                    1,
+                    toWei(1),
+                    addr1Address
+                )
+
+            // Owner of NFT is addr1
+            expect(await nft.ownerOf(1)).to.equal(addr1Address);
+
+            // Get Items from Items mapping and check fields to ensure they are correct
+            const item = await marketplace.items(1);
+            expect(item.itemId).to.equal(0);
+            expect(item.tokenId).to.equal(0);
+            expect(item.price).to.equal(0);
+            expect(item.sold).to.equal(false);
+        })
+
+        it("Should fail if item does not exist or is not listed by the caller", async () => {
+
+            // when the wrong address try to cancel
+            await expect(
+                marketplace.connect(addr2).cancelListing(1)
+            ).to.be.revertedWith("You are not the seller of this item");
+
+            // when the wrong listing is cancelled
+            await expect(
+                marketplace.connect(addr1).cancelListing(2)
+            ).to.be.revertedWith("Item does not exist");
+        })
+
+    });
+
     describe("Purchasing Items from marketplace", () => {
         let price = 2
         let totalPriceInWei: any;

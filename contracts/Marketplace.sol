@@ -104,15 +104,18 @@ contract Marketplace is ReentrancyGuard {
         // transfer nft back to seller
         item.nft.transferFrom(address(this), msg.sender, item.tokenId);
 
+        // store item and itemId in a variable to emmit event
+        Item memory _listedItemToCancel = item;
+
         // remove item from mapping
         delete items[_itemId];
 
         // emit event
         emit Cancelled(
-            _itemId,
-            address(item.nft),
-            item.tokenId,
-            item.price,
+            _listedItemToCancel.itemId,
+            address(_listedItemToCancel.nft),
+            _listedItemToCancel.tokenId,
+            _listedItemToCancel.price,
             msg.sender
         );
     }
