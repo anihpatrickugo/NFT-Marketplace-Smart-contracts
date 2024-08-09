@@ -70,6 +70,25 @@ describe("NFTMarketplace", async () => {
         })
     });
 
+    describe("Send NFTs", () => {
+        beforeEach(async () => {
+            // addr1 mints an NFT
+            await nft.connect(addr1).mint(URI);
+
+            // addr1 approves address to spend it
+            await nft.connect(addr1).setApprovalForAll(addr2Address, true);
+        })
+
+        it("Should transfer nft from one address to another", async () => {
+            // addr2 receives nft from addr1
+            await nft.connect(addr2).transferFrom(addr1Address, addr2Address, 1);
+            expect(await nft.balanceOf(addr1Address)).to.equal(0);
+            expect(await nft.balanceOf(addr2Address)).to.equal(1);
+            expect(await nft.ownerOf(1)).to.equal(addr2Address);
+        });
+
+    })
+
     describe("Listing Items in marketplace", () => {
         beforeEach(async () => {
             // addr1 mints an NFT

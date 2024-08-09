@@ -8,6 +8,7 @@ contract NFT is ERC721URIStorage {
 
     constructor() ERC721("Africana NFT", "A54") {}
 
+    // mint function
     function mint(string memory _tokenURI) external returns (uint) {
         tokenCount++;
         _safeMint(msg.sender, tokenCount);
